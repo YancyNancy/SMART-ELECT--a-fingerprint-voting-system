@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting System - Project Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<!-- ================= ROLE SELECTION ================= -->
+<div id="role-screen" class="app-container">
+    <div class="app-header">
+        <h1>Smart Ballot System</h1>
+        <p>Select Login Type</p>
+    </div>
+
+    <div class="role-grid">
+        <div id="role-voter-btn" class="role-card">
+            <h3>👮 Voter Login</h3>
+            <p>Login with Voter ID</p>
+        </div>
+
+        <div id="role-admin-btn" class="role-card">
+            <h3>👨‍💻 Admin Login</h3>
+            <p>View Results & Data</p>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ADMIN LOGIN ================= -->
+<div id="admin-login-screen" class="app-container hidden">
+    <div class="card">
+        <h2>Admin Access</h2>
+
+        <div class="auth-inputs">
+            <label>Username</label>
+            <input type="text" id="admin-id-input" placeholder="Enter Username">
+
+            <label>Password</label>
+            <input type="password" id="admin-password-input" placeholder="Enter Password">
+        </div>
+
+        <div class="actions">
+            <button id="admin-login-back-btn" class="secondary-btn">Back</button>
+            <button id="admin-login-btn" class="primary-btn">Login</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="#" style="color: #00e676; text-decoration: none; font-size: 0.9rem; opacity: 0.8;">
+                Forgot Password?
+            </a>
+        </div>
+
+        <img src="fingerprint-scan.jpg" alt="Fingerprint Scan" class="login-footer-image">
+    </div>
+</div>
+
+<!-- ================= VOTER LAYOUT ================= -->
+<div id="voter-layout" class="app-container hidden">
+    <div class="layout">
+
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar">
+            <div class="profile-card">
+                <div class="avatar-circle">👤</div>
+                <div>
+                    <h3 id="voter-name">---</h3>
+                    <p id="voter-id">ID: ---</p>
+                </div>
+            </div>
+
+            <div class="profile-meta">
+                <p>📍 <span id="voter-const">---</span></p>
+                <p>🔐 Status: <span id="voter-status">Not Authenticated</span></p>
+            </div>
+        </div>
+
+        <!-- ===== MAIN PANEL ===== -->
+        <div class="main-panel">
+            <div class="card">
+
+                <!-- STEPS -->
+                <div class="steps">
+                    <div id="v-step-auth" class="step active">1. Login</div>
+                    <div id="v-step-vote" class="step">2. Vote</div>
+                    <div id="v-step-confirm" class="step">3. Done</div>
+                </div>
+
+                <!-- ===== LOGIN SCREEN ===== -->
+               <div id="v-auth-screen" class="inner-card">
+    <div style="text-align:center; margin-bottom:20px;">
+        <h2>Voter Identification</h2>
+        <p>Enter your unique Voter ID to login.</p>
+    </div>
+
+    <div class="auth-inputs" style="max-width:300px; margin:0 auto;">
+        <input  
+            type="text"
+            id="manual-voter-id"
+            placeholder="Enter Voter ID (e.g. 20)"
+            style="text-align:center; font-size:1.2rem;"
+        >
+    </div>
+
+    <p id="v-auth-status"
+       style="text-align:center; margin:10px 0; min-height:20px; color:orange;">
+    </p>
+
+    <button id="v-manual-login-btn"
+            class="primary-btn"
+            style="width:100%; margin-top:10px;">
+        Verify & Login
+    </button>
+    <button id="fingerprint-login-btn"
+        class="secondary-btn"
+        style="width:100%; margin-top:10px;">
+    Scan Fingerprint (Demo)
+</button>
+
+    <img src="fingerprint-scan.jpg" alt="Fingerprint Scan" class="login-footer-image">
+</div>
+                <!-- ===== VOTING SCREEN ===== -->
+                <div id="v-voting-screen" class="inner-card hidden">
+                    <h2>Select Candidate</h2>
+
+                    <div id="candidate-list" class="candidate-list">
+                        Loading...
+                    </div>
+
+                    <p id="vote-status" style="text-align:center; margin-top:15px;"></p>
+
+                    <div class="actions">
+                        <button id="v-back-to-auth" class="secondary-btn">Cancel</button>
+                        <button id="v-cast-vote-btn" type="button" class="primary-btn">Cast Vote</button>
+                    </div>
+                </div>
+
+                <!-- ===== CONFIRMATION SCREEN ===== -->
+                <div id="v-confirmation-screen" class="hidden">
+                    <div style="text-align:center;">
+                        <h2 style="color:#00e676; font-size:3rem;">✔</h2>
+                        <h3>Vote Recorded!</h3>
+
+                        <div class="summary">
+                            <p><strong>Voter:</strong> <span id="c-voter-name"></span></p>
+                            <p><strong>Voted For:</strong> <span id="c-candidate-name"></span></p>
+                            <p><small>Txn ID: <span id="c-txn-id"></span></small></p>
+                        </div>
+
+                        <button id="v-finish-btn" class="primary-btn">Logout</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ADMIN DASHBOARD ================= -->
+<div id="admin-layout" class="app-container hidden">
+
+    <div class="app-header admin-header">
+        <h2>Admin Dashboard</h2>
+        <button id="reset-demo-btn" class="secondary-btn">
+            Logout
+        </button>
+    </div>
+        
+    <select id="boothWardSelect">
+  <option value="1">Ward 1</option>
+  <option value="2">Ward 2</option>
+</select>
+
+<button onclick="setBooth()">Set Booth</button>
+
+    <!-- ADMIN ACTION BUTTONS -->
+    <div class="admin-actions">
+        <button class="admin-action-btn">Manage Voters</button>
+        <button class="admin-action-btn">Manage Candidates</button>
+        <button class="admin-action-btn">Manage Election</button>
+        <button class="admin-action-btn primary-action">Generate Results</button>
+    </div>
+
+    <!-- MANAGE CANDIDATES PANEL (DEMO ONLY) -->
+<div id="manage-candidates-panel" class="card hidden">
+
+    <h3>Manage Candidates (Demo)</h3>
+    <p style="opacity:0.7; margin-bottom:15px;">
+        This is a demonstration interface. Changes here do not affect live voting.
+    </p>
+
+    <!-- ADD CANDIDATE -->
+    <div class="auth-inputs">
+        <input type="text" id="demo-cand-name" placeholder="Candidate Name">
+        <input type="text" id="demo-cand-party" placeholder="Party">
+        <button id="add-demo-candidate" class="primary-btn" style="margin-top:10px;">
+            Add Candidate
+        </button>
+    </div>
+
+    <!-- CANDIDATE LIST -->
+    <table class="results-table" style="margin-top:20px;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Party</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="demo-candidate-body"></tbody>
+    </table>
+
+</div>
+<!-- MANAGE VOTERS PANEL (DEMO ONLY) -->
+<div id="manage-voters-panel" class="card hidden">
+
+    <h3>Manage Voters (Demo)</h3>
+    <p style="opacity:0.7; margin-bottom:15px;">
+        Demonstration only. Changes here do not affect live voting.
+    </p>
+
+    <!-- ADD VOTER -->
+    <div class="auth-inputs">
+        <input type="text" id="demo-voter-name" placeholder="Voter Name">
+        <input type="text" id="demo-voter-id" placeholder="Voter ID">
+        <button id="add-demo-voter" class="primary-btn" style="margin-top:10px;">
+            Add Voter
+        </button>
+    </div>
+
+    <!-- VOTER LIST -->
+    <table class="results-table" style="margin-top:20px;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Voter ID</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="demo-voter-body"></tbody>
+    </table>
+
+</div>
+
+    <!-- LIVE RESULTS PANEL -->
+    <div class="card" id="admin-results-panel">
+        <h3>Live Election Results</h3>
+        <p id="winner-text" class="winner-text">Loading...</p>
+
+        <table class="results-table" style="width:100%; margin-top:15px;">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Party</th>
+                    <th>Votes</th>
+                </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- MANAGE ELECTION PANEL (DEMO ONLY) -->
+<div id="manage-election-panel" class="card hidden">
+
+    <h3>Manage Election (Demo)</h3>
+    <p style="opacity:0.7; margin-bottom:15px;">
+        Demonstration only. Election state here does not affect live voting.
+    </p>
+
+    <div class="auth-inputs">
+        <label>Election Start Date</label>
+        <input type="date" id="demo-election-start">
+
+        <label>Election End Date</label>
+        <input type="date" id="demo-election-end">
+    </div>
+
+    <div class="actions">
+        <button id="demo-start-election" class="primary-btn">
+            Start Election
+        </button>
+        <button id="demo-end-election" class="secondary-btn">
+            End Election
+        </button>
+    </div>
+
+    <p id="demo-election-status"
+       style="margin-top:20px; font-weight:bold; text-align:center;">
+        Status: Not Started
+    </p>
+
+</div>
+<!-- FORGOT PASSWORD MODAL (UI ONLY) -->
+<div id="forgot-password-modal" class="hidden"
+     style="
+        position:fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(0,0,0,0.6);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:999;
+     ">
+
+    <div class="card" style="max-width:400px; text-align:center;">
+        <h3>Forgot Password</h3>
+        <p style="margin:15px 0; opacity:0.8;">
+            Password recovery is handled by the system administrator.
+            <br><br>
+            Please contact the election authority.
+        </p>
+        <button id="close-forgot-modal" class="primary-btn">
+        
+        </button>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script src="app.js"></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const voter = params.get("voter");
+
+if (voter) {
+    document.querySelector("input").value = voter;
+}
+</script>
+</body>
+</html>

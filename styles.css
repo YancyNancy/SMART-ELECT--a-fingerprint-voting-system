@@ -1,0 +1,368 @@
+/* Global Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Body */
+body {
+    background: linear-gradient(135deg, #141e30, #243b55);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 60px;
+    color: #f5f7fa;
+}
+
+/* App Container */
+.app-container {
+    width: 100%;
+    max-width: 1000px;
+    padding: 25px;
+}
+
+/* Header */
+.app-header {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.app-header h1,
+.app-header h2 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.app-header p {
+    margin-top: 8px;
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Cards */
+.card,
+.inner-card {
+    background: rgba(18, 32, 47, 0.98);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow:
+        0 20px 50px rgba(0,0,0,0.45),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.inner-card {
+    margin-top: 18px;
+}
+
+/* Role Selection */
+.role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.role-card {
+    background: linear-gradient(
+        145deg,
+        rgba(255,255,255,0.08),
+        rgba(255,255,255,0.03)
+    );
+    padding: 38px 25px;
+    border-radius: 18px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.35s ease;
+    text-align: center;
+    backdrop-filter: blur(6px);
+}
+
+.role-card h3 {
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+}
+
+.role-card p {
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.role-card:hover {
+    border-color: #00e5ff;
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+}
+
+/* Layout */
+.layout {
+    display: flex;
+    gap: 25px;
+}
+
+.sidebar {
+    width: 280px;
+    background: rgba(0,0,0,0.35);
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.main-panel {
+    flex: 1;
+}
+
+/* Profile */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 12px;
+}
+
+.avatar-circle {
+    width: 46px;
+    height: 46px;
+    background: #00e676;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.profile-meta p {
+    font-size: 0.9rem;
+    opacity: 0.85;
+    margin-bottom: 4px;
+}
+
+/* Steps */
+.steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    border-bottom: 2px solid #444;
+}
+
+.step {
+    padding: 10px;
+    opacity: 0.45;
+    flex: 1;
+    text-align: center;
+}
+
+.step.active {
+    opacity: 1;
+    border-bottom: 3px solid #00e676;
+    font-weight: bold;
+    color: #00e676;
+}
+
+/* Inputs */
+.auth-inputs input {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    background: #1e2a38;
+    border: 1px solid #445;
+    color: white;
+    border-radius: 7px;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+.auth-inputs input:focus {
+    outline: none;
+    border-color: #00e676;
+    background: #223142;
+}
+
+/* Buttons */
+.primary-btn {
+    background: linear-gradient(135deg, #00e676, #00c853);
+    color: black;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.25s;
+}
+
+.primary-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 25px rgba(0,230,118,0.35);
+}
+
+.secondary-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.secondary-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+/* Candidate List */
+.candidate-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255,255,255,0.06);
+    padding: 18px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.25s;
+    border: 1px solid transparent;
+}
+
+.candidate-card:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: #00e676;
+    transform: translateX(4px);
+}
+
+input[type="radio"] {
+    transform: scale(1.4);
+    accent-color: #00e676;
+}
+
+/* Results Table */
+.results-table th,
+.results-table td {
+    padding: 12px;
+    border-bottom: 1px solid #444;
+    text-align: left;
+}
+
+.results-table th {
+    opacity: 0.85;
+    font-weight: 600;
+}
+
+
+/* ================= ADMIN DASHBOARD ACTIONS ================= */
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+.admin-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.admin-action-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.25s;
+    font-weight: 600;
+}
+
+.admin-action-btn:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-3px);
+}
+
+.primary-action {
+    background: linear-gradient(135deg, #00e676, #00c853);
+    color: black;
+    border: none;
+}
+
+.primary-action:hover {
+    box-shadow: 0 10px 25px rgba(0,230,118,0.4);
+}
+
+#manage-candidates-panel {
+    margin-top: 30px;
+}
+
+#manage-voters-panel {
+    margin-top: 30px;
+}
+
+#manage-election-panel {
+    margin-top: 30px;
+}
+/* Login Page Fingerprint Image */
+.login-footer-image {
+    display: block;
+    margin: 30px auto 0; /* Upar se thoda gap, center alignment */
+    width: 120px;        /* Image ki chauthai */
+    height: auto;
+    opacity: 0.8;        /* Thoda sa transparent taaki background ke saath blend ho */
+}
+/* Login Page Fingerprint Image - Beautified */
+.login-footer-image {
+    display: block;
+    margin: 35px auto 0;  /* Thoda aur gap diya upar se */
+    width: 110px;         /* Size thoda sa chhota kiya taaki elegant lage */
+    height: auto;
+    
+    /* --- SUNDAR BANANE WALE CHANGES --- */
+    opacity: 0.4;         /* Transparency badha di (0.8 se 0.4 kiya) - ab ye zyada transparent hai */
+    mix-blend-mode: screen; /* MAGIC LINE: Ye image ko dark background ke saath blend kar dega */
+    filter: grayscale(100%) drop-shadow(0 0 8px rgba(0, 230, 118, 0.4)); /* Halka sa Green Glow diya */
+    transition: all 0.3s ease; /* Smooth transition */
+}
+
+/* Optional: Jab mouse upar le jayein to thoda bright ho */
+.login-footer-image:hover {
+    opacity: 0.7;
+    filter: grayscale(0%) drop-shadow(0 0 12px rgba(0, 230, 118, 0.6));
+}
+/* --- Party Symbol Image Styling --- */
+.party-symbol-img {
+    width: 45px;         /* Image ka size */
+    height: 45px;
+    object-fit: contain; /* Image pichkegi nahi */
+    background: rgba(255, 255, 255, 0.1); /* Halka background */
+    border-radius: 50%;  /* Golakar design */
+    padding: 5px;
+    margin-right: 15px;  /* Naam se thodi doori */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hidden {
+  display: none;
+}
+
+.candidate-card.nota {
+    border: 1px dashed #ff5252;
+}
