@@ -1,19 +1,26 @@
+
 import sqlite3
 import time
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template 
 from flask_cors import CORS
 import os
+import serial
+import adafruit_fingerprint
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
+uart = serial.Serial("/dev/serial0", baudrate=57600, timeout=1)
+finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 CURRENT_MACHINE = {
     "constituency": "Ghaziabad",
     "ward": 1
 }
 
-DB_NAME = r"C:\Users\hp\OneDrive\Desktop\fingerprint new\fingerprint_voting.db"
-print("DB file exists:", os.path.exists(DB_NAME))
+DB_NAME = "/home/fingerprint/voting_project/fingerprint_voting.db"
+import os
+print("DB PATH:", DB_NAME)
+print("Exists:", os.path.exists(DB_NAME))
 
 
 def get_db_connection():
@@ -238,36 +245,6 @@ def set_election_status():
         "message": f"Election status set to {status}"
     })
 
-# ================= GET ELECTION STATUS =================
-@app.route('/get-election-status', methods=['GET'])
-def get_election_status():
-    conn = get_db_connection()
-    election = conn.execute(
-        "SELECT Status FROM ElectionControl WHERE ElectionID = 1"
-    ).fetchone()
-    conn.close()
-
-    return jsonify({"status": election["Status"]})
-
-
-@app.route('/test-fingerprint/<int:fid>')
-def test_fingerprint(fid):
-
-    voter = get_voter_by_fingerprint(fid)
-
-    if voter:
-        return jsonify({
-            "found": True,
-            "name": voter["Name"],
-            "voter_id": voter["VoterID"],
-            "has_voted": voter["HasVoted"] == 1
-        })
-    else:
-        return jsonify({
-            "found": False
-        })
-        
-        
         # ----------- NEW ROUTE ADD HERE -----------
 
 @app.route('/fingerprint-login/<int:fid>')
@@ -291,7 +268,60 @@ def fingerprint_login(fid):
         "has_voted": voter["HasVoted"] == 1
     })
 
+@app.route('/')
+def home():
+    return render_template('index.html')
 
+@app.route("/get-election-status", methods=["GET"])
+def get_election_status():
+    conn = get_db_connection()
+    election = conn.execute(
+        "SELECT Status FROM ElectionControl WHERE ElectionID = 1"
+    ).fetchone()
+    conn.close()
+
+    if election is None:
+        return jsonify({"status": "INACTIVE"})
+
+    return jsonify({"status": election["Status"]})
+
+@app.route('/scan-fingerprint', methods=['GET'])
+def scan_fingerprint():
+    try:
+        print("Waiting for finger...")
+        fid = None
+
+        while fid is None:
+            if finger.get_image() == adafruit_fingerprint.OK:
+                if finger.image_2_tz(1) == adafruit_fingerprint.OK:
+                    if finger.finger_search() == adafruit_fingerprint.OK:
+                        fid = finger.finger_id
+
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM Voter WHERE FingerprintID=?", (fid,))
+        voter = cursor.fetchone()
+
+        if not voter:
+            return jsonify({"success": False, "message": "Voter not found"})
+
+        cursor.execute("SELECT * FROM Vote WHERE VoterID=?", (voter[0],))
+        has_voted = cursor.fetchone() is not None
+
+        return jsonify({
+            "success": True,
+            "voter": {
+                "VoterID": voter[0],
+                "Name": voter[1],
+                "Address": voter[2]
+            },
+            "has_voted": has_voted
+        })
+
+    except Exception as e:
+        print("Fingerprint error:", e)
+        return jsonify({"success": False, "message": "Fingerprint scanner error"})
 # ================= RUN =================
 if __name__ == '__main__':
     print("Server running on http://127.0.0.1:5000")

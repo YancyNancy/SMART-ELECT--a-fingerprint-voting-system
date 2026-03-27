@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://10.109.57.192:5000";
+const API_BASE_URL = "http://10.27.250.24:5000";
 
 // STATE
 let currentVoterId = null;
@@ -23,12 +23,23 @@ document.getElementById("role-admin-btn").addEventListener("click", () => {
 
 // --- VOTER LOGIN (MANUAL ID) ---
     document.getElementById("v-manual-login-btn").addEventListener("click", async () => {
-        alert("Please use fingerprint authentication");
-        return;
+       // alert("Please use fingerprint authentication");
+       // return;
 
     // ===== CHECK ELECTION STATUS BEFORE LOGIN =====
     const statusRes = await fetch(`${API_BASE_URL}/get-election-status`);
-    const statusData = await statusRes.json();
+
+const statusText = await statusRes.text();
+console.log("STATUS RAW:", statusText);
+
+let statusData;
+try {
+    statusData = JSON.parse(statusText);
+} catch (e) {
+    console.error("STATUS JSON ERROR:", e);
+    alert("Server not returning proper data for election status");
+    return;
+}
 
     if (statusData.status !== "ACTIVE") {
         alert("Election has not started or has already ended.");
@@ -54,7 +65,16 @@ document.getElementById("role-admin-btn").addEventListener("click", () => {
             body: JSON.stringify({ voter_id: enteredId })
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        console.log("RAW RESPONSE:", text);
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("JSON ERROR:", e);
+            return;
+        }
 
         if (data.success) {
             // Fill sidebar with voter info
@@ -437,14 +457,14 @@ async function loadCandidatesWithImages() {
     // "Party Ka Naam": "Photo Ka Path"
    // === YAHAN PATH FIX KIYA HAI ===
     const partyImages = {
-        "Party D": "assets/party-icons/party-d.png",
-        "Party E": "assets/party-icons/party-e.png",
-        "Party F": "assets/party-icons/party-f.png",
-        "None": "assets/party-icons/nota.png"
+        "Party D": "/static/assets/party-icons/party-d.png",
+        "Party E": "/static/assets/party-icons/party-e.png",
+        "Party F": "/static/assets/party-icons/party-f.png",
+        "None": "/static/assets/party-icons/nota.png"
     };
 
     // Default image ka path bhi sahi folder se dein (agar koi image missing ho)
-    const defaultImage = "assets/party-icons/party-d.png";
+    const defaultImage = "/static/assets/party-icons/party-d.png";
 
     try {
         const res = await fetch(`${API_BASE_URL}/get-candidates`);
@@ -454,15 +474,14 @@ async function loadCandidatesWithImages() {
         candidates.forEach(c => {
             // Yahan check kar rahe hain ki is party ki photo list mein hai ya nahi
             // Agar nahi hai, to default photo use hogi
+
             let imagePath;
 
-// agar candidate NOTA hai
             if (c.Name === "NOTA") {
-            imagePath = "assets/party-icons/nota.png";
-            } else {
-             imagePath = partyImages[c.Party] || defaultImage;
-        }
-
+                imagePath = "/static/assets/party-icons/nota.png";
+} else {
+    imagePath = partyImages[c.Party] || defaultImage;
+}
             list.innerHTML += `
                 <label class="candidate-card">
                     <input type="radio" name="candidate" value="${c.CandidateID}" data-name="${c.Name}">
