@@ -1,16 +1,17 @@
-const API_BASE_URL = "http://10.27.250.24:5000";
+const API_BASE_URL = "http://10.212.189.24:5000";
 
-// STATE
+
 let currentVoterId = null;
 let currentVoterName = "";
+let currentAdminUser = "";
 
-// SCREENS & BUTTONS
+
 const roleScreen = document.getElementById("role-screen");
 const voterLayout = document.getElementById("voter-layout");
 const adminLayout = document.getElementById("admin-layout");
 const adminLoginScreen = document.getElementById("admin-login-screen");
 
-// --- NAVIGATION ---
+
 document.getElementById("role-voter-btn").addEventListener("click", () => {
     roleScreen.classList.add("hidden");
     voterLayout.classList.remove("hidden");
@@ -21,12 +22,12 @@ document.getElementById("role-admin-btn").addEventListener("click", () => {
     adminLoginScreen.classList.remove("hidden");
 });
 
-// --- VOTER LOGIN (MANUAL ID) ---
+
     document.getElementById("v-manual-login-btn").addEventListener("click", async () => {
        // alert("Please use fingerprint authentication");
        // return;
 
-    // ===== CHECK ELECTION STATUS BEFORE LOGIN =====
+    
     const statusRes = await fetch(`${API_BASE_URL}/get-election-status`);
 
 const statusText = await statusRes.text();
@@ -76,8 +77,8 @@ try {
             return;
         }
 
-        if (data.success) {
-            // Fill sidebar with voter info
+        if (data.success){
+   
             currentVoterId = data.voter.VoterID;
             currentVoterName = data.voter.Name;
             document.getElementById("voter-name").innerText = data.voter.Name;
@@ -85,13 +86,13 @@ try {
             document.getElementById("voter-const").innerText = data.voter.Address || "Ward 1";
 
             if (data.has_voted) {
-                // Already voted
+               
                 statusMsg.innerText = "Error: Already Voted!";
                 statusMsg.style.color = "red";
                 document.getElementById("voter-status").innerText = "Already Voted";
                 document.getElementById("voter-status").style.color = "red";
             } else {
-                // Login Success
+                
                 statusMsg.innerText = "Verified!";
                 statusMsg.style.color = "#00e676"; // green
                 document.getElementById("voter-status").innerText = "Authenticated";
@@ -100,7 +101,7 @@ try {
                 goToVotingScreen(); // Move to voting screen
             }
         } else {
-            // Invalid ID
+            
             statusMsg.innerText = data.message;
             statusMsg.style.color = "red";
         }
@@ -146,7 +147,7 @@ async function loadCandidates() {
     }
 }
 
-// --- CAST VOTE ---
+
 document.getElementById("v-cast-vote-btn").addEventListener("click", async () => {
        console.log("CAST VOTE BUTTON CLICKED");
     const selected = document.querySelector('input[name="candidate"]:checked');
@@ -155,7 +156,7 @@ document.getElementById("v-cast-vote-btn").addEventListener("click", async () =>
         return;
     }
 
-    // Candidate ka naam nikala taaki Confirmation page pe dikha sakein
+    
     const candidateName = selected.getAttribute("data-name");
 
     try {
@@ -172,26 +173,25 @@ document.getElementById("v-cast-vote-btn").addEventListener("click", async () =>
 
 if (!res.ok) {
     alert(result.message);
-    return;   // VERY IMPORTANT
+    return;   
 }
 
 console.log("Vote result:", result);
 
         if (result.success) {
 
-            // === YAHAN SCREEN CHANGE HOGI ===
+           
 
-            // 1. Voting Screen ko chupao
             document.getElementById("v-voting-screen").classList.add("hidden");
 
-            // 2. Confirmation Screen (Done Page) ko dikhao
+           
             document.getElementById("v-confirmation-screen").classList.remove("hidden");
 
-            // 3. Upar Steps mein "3. Done" ko green karo
+            
             document.getElementById("v-step-vote").classList.remove("active");
             document.getElementById("v-step-confirm").classList.add("active");
 
-            // 4. Details show karo (Voter Name, Candidate Name, Transaction ID)
+            
             document.getElementById("c-voter-name").innerText = currentVoterName;
             document.getElementById("c-candidate-name").innerText = candidateName;
             document.getElementById("c-txn-id").innerText = result.transaction_id;
@@ -205,13 +205,22 @@ console.log("Vote result:", result);
     }
 });
 
-// --- LOGOUT / RESET ---
+
 document.getElementById("v-finish-btn").addEventListener("click", () => location.reload());
 document.getElementById("v-back-to-auth").addEventListener("click", () => location.reload());
-document.getElementById("reset-demo-btn").addEventListener("click", () => location.reload());
+document.getElementById("reset-demo-btn").addEventListener("click", async () => {
+
+    await fetch(`${API_BASE_URL}/admin-logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: currentAdminUser })
+    });
+
+    location.reload();
+});
 document.getElementById("admin-login-back-btn").addEventListener("click", () => location.reload());
 
-// --- ADMIN LOGIN ---
+
 document.getElementById("admin-login-btn").addEventListener("click", async () => {
     const u = document.getElementById("admin-id-input").value;
     const p = document.getElementById("admin-password-input").value;
@@ -225,10 +234,14 @@ document.getElementById("admin-login-btn").addEventListener("click", async () =>
         const data = await res.json();
 
         if (data.success) {
+
+            currentAdminUser = u;
+            loadAdminLogs();
             document.getElementById("admin-login-screen").classList.add("hidden");
             adminLayout.classList.remove("hidden");
             loadResults();
             loadElectionStatus(); 
+
         } else {
             alert("Wrong credentials");
         }
@@ -242,7 +255,7 @@ document.getElementById("admin-login-btn").addEventListener("click", async () =>
     document.getElementById(id)?.addEventListener("click", () => location.reload());
 });
 
-/* ================= FORGOT PASSWORD (UI ONLY) ================= */
+
 document.querySelector("a[href='#']")?.addEventListener("click", e => {
     e.preventDefault();
     document.getElementById("forgot-password-modal").classList.remove("hidden");
@@ -273,29 +286,110 @@ async function loadResults() {
 }
 
 
-/* =====================================================
-   ADMIN → MANAGE CANDIDATES (DEMO ONLY - UI LEVEL)
-   ===================================================== */
+let chartInstance = null;
 
-// DEMO candidate list (ADMIN ONLY)
+async function loadResults() {
+    const res = await fetch(`${API_BASE_URL}/get-results`);
+    const data = await res.json();
+
+    const tbody = document.getElementById("results-body");
+    tbody.innerHTML = "";
+
+    let labels = [];
+    let votes = []; 
+    
+
+    let winner = "";
+    let max = -1;
+
+    data.forEach(r => {
+        if (labels.includes(r.Party)) {
+    let index = labels.indexOf(r.Party);
+    votes[index] += r.vote_count;
+} else {
+    labels.push(r.Party);
+    votes.push(r.vote_count);
+}
+
+      let index = labels.indexOf(r.Party);
+if (votes[index] > max) {
+    max = votes[index];
+    winner = r.Party;
+}
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${r.Name}</td>
+                <td>${r.Party}</td>
+                <td>${r.vote_count}</td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("winner-text").innerText =
+        `Leading Party: ${winner} (${max} votes)`;
+
+    // ===== GRAPH =====
+    if (chartInstance) chartInstance.destroy();
+
+    const ctx = document.getElementById("voteChart").getContext("2d");
+
+    chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Votes",
+            data: votes
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+    // ===== ANALYSIS =====
+    let total = votes.reduce((a, b) => a + b, 0);
+
+    let analysisText = "<strong>Vote Share:</strong><br><br>";
+
+    labels.forEach((party, i) => {
+        let percent = ((votes[i] / total) * 100).toFixed(1);
+        analysisText += `${party}: ${percent}%<br>`;
+    });
+
+    let sorted = [...votes].sort((a, b) => b - a);
+    let margin = sorted.length > 1 ? sorted[0] - sorted[1] : 0;
+
+    analysisText += `<br><strong>Winning Margin:</strong> ${margin} votes`;
+
+    document.getElementById("analysis-box").innerHTML = analysisText;
+}
+
+
 let demoCandidates = [];
 
-// BUTTON REFERENCES (Admin dashboard buttons)
+
 const adminActionButtons = document.querySelectorAll(".admin-action-btn");
 
-// 2nd button = Manage Candidates
-const manageCandidatesBtn = adminActionButtons[1];
 
-// PANEL (HTML jo maine pehle diya tha)
+const manageCandidatesBtn = adminActionButtons[0];
+
 const manageCandidatesPanel = document.getElementById("manage-candidates-panel");
 const demoBody = document.getElementById("demo-candidate-body");
 
-// TOGGLE PANEL
+
 manageCandidatesBtn.addEventListener("click", () => {
     manageCandidatesPanel.classList.toggle("hidden");
 });
 
-// ADD DEMO CANDIDATE
+
 document.getElementById("add-demo-candidate").addEventListener("click", () => {
     const name = document.getElementById("demo-cand-name").value.trim();
     const party = document.getElementById("demo-cand-party").value.trim();
@@ -312,7 +406,7 @@ document.getElementById("add-demo-candidate").addEventListener("click", () => {
     document.getElementById("demo-cand-party").value = "";
 });
 
-// RENDER DEMO CANDIDATES
+
 function renderDemoCandidates() {
     demoBody.innerHTML = "";
 
@@ -338,83 +432,21 @@ function deleteDemoCandidate(index) {
     renderDemoCandidates();
 }
 
-/* =====================================================
-   ADMIN → MANAGE VOTERS (DEMO ONLY - UI LEVEL)
-   ===================================================== */
-
-let demoVoters = [];
-
-// Admin buttons (already selected earlier)
-const manageVotersBtn = document.querySelectorAll(".admin-action-btn")[0]; // 1st button
-
-const manageVotersPanel = document.getElementById("manage-voters-panel");
-const demoVoterBody = document.getElementById("demo-voter-body");
-
-// TOGGLE PANEL
-manageVotersBtn.addEventListener("click", () => {
-    manageVotersPanel.classList.toggle("hidden");
-});
-
-// ADD DEMO VOTER
-document.getElementById("add-demo-voter").addEventListener("click", () => {
-    const name = document.getElementById("demo-voter-name").value.trim();
-    const id = document.getElementById("demo-voter-id").value.trim();
-
-    if (!name || !id) {
-        alert("Please enter voter name and voter ID");
-        return;
-    }
-
-    demoVoters.push({ name, id });
-    renderDemoVoters();
-
-    document.getElementById("demo-voter-name").value = "";
-    document.getElementById("demo-voter-id").value = "";
-});
-
-// RENDER DEMO VOTERS
-function renderDemoVoters() {
-    demoVoterBody.innerHTML = "";
-
-    demoVoters.forEach((v, index) => {
-        demoVoterBody.innerHTML += `
-            <tr>
-                <td>${v.name}</td>
-                <td>${v.id}</td>
-                <td>
-                    <button class="secondary-btn"
-                            onclick="deleteDemoVoter(${index})">
-                        Delete
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// DELETE DEMO VOTER
-function deleteDemoVoter(index) {
-    demoVoters.splice(index, 1);
-    renderDemoVoters();
-}
 
 
-/* =====================================================
-   ADMIN → MANAGE ELECTION (DEMO ONLY - UI LEVEL)
-   ===================================================== */
 
-// 3rd admin button = Manage Election
-const manageElectionBtn = document.querySelectorAll(".admin-action-btn")[2];
+
+
+const manageElectionBtn = document.querySelectorAll(".admin-action-btn")[1];
 
 const manageElectionPanel = document.getElementById("manage-election-panel");
 const electionStatusText = document.getElementById("demo-election-status");
 
-// TOGGLE PANEL
+
 manageElectionBtn.addEventListener("click", () => {
     manageElectionPanel.classList.toggle("hidden");
 });
 
-// START ELECTION
 document.getElementById("demo-start-election").addEventListener("click", async () => {
     const res = await fetch(`${API_BASE_URL}/set-election-status`, {
         method: "POST",
@@ -427,7 +459,7 @@ document.getElementById("demo-start-election").addEventListener("click", async (
     loadElectionStatus();
 });
 
-// END ELECTION
+
 document.getElementById("demo-end-election").addEventListener("click", async () => {
     const res = await fetch(`${API_BASE_URL}/set-election-status`, {
         method: "POST",
@@ -440,7 +472,6 @@ document.getElementById("demo-end-election").addEventListener("click", async () 
     loadElectionStatus();
 });
 
-// ================= FORGOT PASSWORD (UI ONLY) =================
 document.getElementById("forgot-password-link")?.addEventListener("click", (e) => {
     e.preventDefault();
     document.getElementById("forgot-password-modal").classList.remove("hidden");
@@ -453,9 +484,7 @@ async function loadCandidatesWithImages() {
     const list = document.getElementById("candidate-list");
     list.innerHTML = "Loading...";
 
-    // === YAHAN APNI PHOTOS KA NAAM LIKHEIN ===
-    // "Party Ka Naam": "Photo Ka Path"
-   // === YAHAN PATH FIX KIYA HAI ===
+   
     const partyImages = {
         "Party D": "/static/assets/party-icons/party-d.png",
         "Party E": "/static/assets/party-icons/party-e.png",
@@ -463,7 +492,7 @@ async function loadCandidatesWithImages() {
         "None": "/static/assets/party-icons/nota.png"
     };
 
-    // Default image ka path bhi sahi folder se dein (agar koi image missing ho)
+    
     const defaultImage = "/static/assets/party-icons/party-d.png";
 
     try {
@@ -472,9 +501,7 @@ async function loadCandidatesWithImages() {
 
         list.innerHTML = "";
         candidates.forEach(c => {
-            // Yahan check kar rahe hain ki is party ki photo list mein hai ya nahi
-            // Agar nahi hai, to default photo use hogi
-
+            
             let imagePath;
 
             if (c.Name === "NOTA") {
@@ -506,7 +533,7 @@ async function loadCandidatesWithImages() {
     }
 }
 
-// ================= SET BOOTH =================
+
 function setBooth() {
   const ward = document.getElementById("boothWardSelect").value;
 
@@ -575,12 +602,22 @@ document.getElementById("fingerprint-login-btn")?.addEventListener("click", asyn
 
         if (data.success) {
 
+            const statusRes = await fetch(`${API_BASE_URL}/get-election-status`);
+            const statusData = await statusRes.json();
+
+            if (statusData.status !== "ACTIVE") {
+                alert("Voting is closed!");
+                return;
+            }
+
             currentVoterId = data.voter.VoterID;
             currentVoterName = data.voter.Name;
 
             document.getElementById("voter-name").innerText = data.voter.Name;
             document.getElementById("voter-id").innerText = "ID: " + data.voter.VoterID;
             document.getElementById("voter-const").innerText = data.voter.Address;
+            document.getElementById("voter-status").innerText = "Authenticated";
+            document.getElementById("voter-status").style.color = "#00e676";
 
             if (data.has_voted) {
                 alert("Already voted!");
@@ -598,3 +635,54 @@ document.getElementById("fingerprint-login-btn")?.addEventListener("click", asyn
     }
 
 });
+async function loadAdminLogs() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/get-admin-logs`);
+        const logs = await res.json();
+
+        const tbody = document.getElementById("admin-logs-body");
+        tbody.innerHTML = "";
+
+        logs.forEach(log => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${log.username}</td>
+                    <td>${log.login_time}</td>
+                    <td>${log.logout_time || "Active"}</td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error("Admin logs error:", err);
+    }
+}
+
+async function downloadReport() {
+
+    const res = await fetch(`${API_BASE_URL}/get-results`);
+    const data = await res.json();
+
+    let csv = "Election Report\n\n";
+    csv += "Candidate,Party,Votes\n";
+
+    let totalVotes = 0;
+
+    data.forEach(r => {
+        totalVotes += r.vote_count;
+        csv += `${r.Name},${r.Party},${r.vote_count}\n`;
+    });
+
+    csv += `\nTotal Votes, ,${totalVotes}\n`;
+
+    // file banana
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "election_report.csv";
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+}
