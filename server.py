@@ -6,6 +6,7 @@ from flask_cors import CORS
 import os
 import serial
 import adafruit_fingerprint
+import subprocess
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
@@ -27,7 +28,7 @@ def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
-# ---------- FINGERPRINT HELPER ----------
+
 def get_voter_by_fingerprint(fid):
     conn = get_db_connection()
 
@@ -40,7 +41,7 @@ def get_voter_by_fingerprint(fid):
     return voter
 
 
-# ================= ADMIN LOGIN =================
+
 @app.route('/admin-login', methods=['POST'])
 def admin_login():
     data = request.json
@@ -54,12 +55,21 @@ def admin_login():
     conn.close()
 
     if admin:
+        conn = get_db_connection()
+
+        conn.execute(
+            "INSERT INTO admin_logs (username, login_time, logout_time) VALUES (?, datetime('now', '+5 hours', '+30 minutes'), NULL)",
+            (data.get('username'),)
+        )
+        conn.commit()
+        conn.close()
+
         return jsonify({"success": True})
     else:
         return jsonify({"success": False, "message": "Invalid Credentials"})
 
 
-# ================= VOTER LOGIN =================
+
 @app.route('/auth-voter', methods=['POST'])
 def auth_voter():
     data = request.json
@@ -80,11 +90,11 @@ def auth_voter():
     if not voter:
         return jsonify({"success": False, "message": "Invalid Voter ID"}), 400
 
-    # Constituency Check
+    
     if voter["Constituency"].strip() != CURRENT_MACHINE["constituency"]:
         return jsonify({"success": False, "message": "Wrong Constituency"}), 400
 
-    # Ward Check
+    
     if int(voter["Ward"]) != int(CURRENT_MACHINE["ward"]):
         return jsonify({"success": False, "message": "This booth is not for your ward"}), 400
 
@@ -99,7 +109,7 @@ def auth_voter():
     })
 
 
-# ================= GET CANDIDATES =================
+
 @app.route('/get-candidates', methods=['GET'])
 def get_candidates():
     conn = get_db_connection()
@@ -119,7 +129,7 @@ def get_candidates():
     return jsonify([dict(row) for row in candidates])
 
 
-# ================= CAST VOTE =================
+
 @app.route('/cast-vote', methods=['POST'])
 def cast_vote():
     data = request.json
@@ -131,7 +141,7 @@ def cast_vote():
 
     conn = get_db_connection()
 
-    # ================= CHECK ELECTION STATUS =================
+    
     status_row = conn.execute(
         "SELECT Status FROM ElectionControl WHERE ElectionID = 1"
     ).fetchone()
@@ -182,22 +192,21 @@ def cast_vote():
         "transaction_id": f"TXN-{int(time.time())}"
     })
 
-# ================= RESULTS =================
+
 @app.route('/get-results', methods=['GET'])
 def get_results():
     conn = get_db_connection()
 
     results = conn.execute("""
-        SELECT 
-            c.Name,
-            c.Party,
-            COUNT(v.VoteID) AS vote_count
-        FROM Candidate c
-        LEFT JOIN Vote v ON c.CandidateID = v.CandidateID
-        WHERE c.Constituency = ?
-        AND (c.Ward = ? OR c.Ward = 0)
-        GROUP BY c.CandidateID
-    """, (CURRENT_MACHINE["constituency"], CURRENT_MACHINE["ward"])).fetchall()
+    SELECT 
+        c.Name,
+        c.Party,
+        COUNT(v.VoteID) AS vote_count
+    FROM Candidate c
+    LEFT JOIN Vote v ON c.CandidateID = v.CandidateID
+    WHERE c.Constituency = ?
+    GROUP BY c.CandidateID
+""", (CURRENT_MACHINE["constituency"],)).fetchall()
 
     conn.close()
 
@@ -245,7 +254,7 @@ def set_election_status():
         "message": f"Election status set to {status}"
     })
 
-        # ----------- NEW ROUTE ADD HERE -----------
+       
 
 @app.route('/fingerprint-login/<int:fid>')
 def fingerprint_login(fid):
@@ -289,15 +298,23 @@ def get_election_status():
 def scan_fingerprint():
     try:
         print("Waiting for finger...")
-        fid = None
+        time.sleep(3)
+        # Step 1
+        if finger.get_image() != adafruit_fingerprint.OK:
+            return jsonify({"success": False, "message": "No finger detected"})
 
-        while fid is None:
-            if finger.get_image() == adafruit_fingerprint.OK:
-                if finger.image_2_tz(1) == adafruit_fingerprint.OK:
-                    if finger.finger_search() == adafruit_fingerprint.OK:
-                        fid = finger.finger_id
+        # Step 2
+        if finger.image_2_tz(1) != adafruit_fingerprint.OK:
+            return jsonify({"success": False, "message": "Failed to process fingerprint"})
+
+        # Step 3
+        if finger.finger_search() != adafruit_fingerprint.OK:
+            return jsonify({"success": False, "message": "Fingerprint not registered"})
+
+        fid = finger.finger_id
 
         conn = sqlite3.connect(DB_NAME)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM Voter WHERE FingerprintID=?", (fid,))
@@ -306,6 +323,11 @@ def scan_fingerprint():
         if not voter:
             return jsonify({"success": False, "message": "Voter not found"})
 
+        if int(voter["Ward"]) != int(CURRENT_MACHINE["ward"]):
+            return jsonify({
+                "success": False,
+                "message": "This booth is not for your ward"
+            })
         cursor.execute("SELECT * FROM Vote WHERE VoterID=?", (voter[0],))
         has_voted = cursor.fetchone() is not None
 
@@ -322,7 +344,42 @@ def scan_fingerprint():
     except Exception as e:
         print("Fingerprint error:", e)
         return jsonify({"success": False, "message": "Fingerprint scanner error"})
-# ================= RUN =================
+
+@app.route('/admin-logout', methods=['POST'])
+def admin_logout():
+    data = request.json
+    username = data.get("username")
+
+    conn = get_db_connection()
+
+    conn.execute("""
+        UPDATE admin_logs
+        SET logout_time = datetime('now')
+        WHERE username = ?
+        AND logout_time IS NULL
+    """, (username,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True})
+       
+
+@app.route('/get-admin-logs', methods=['GET'])
+def get_admin_logs():
+    conn = get_db_connection()
+
+    logs = conn.execute("""
+        SELECT username, login_time, logout_time
+        FROM admin_logs
+        ORDER BY id DESC
+    """).fetchall()
+
+    conn.close()
+
+    return jsonify([dict(row) for row in logs])
+
+
 if __name__ == '__main__':
     print("Server running on http://127.0.0.1:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
