@@ -9,7 +9,7 @@
 
 <body>
 
-<!-- ================= ROLE SELECTION ================= -->
+
 <div id="role-screen" class="app-container">
     <div class="app-header">
         <h1>Smart Ballot System</h1>
@@ -18,18 +18,18 @@
 
     <div class="role-grid">
         <div id="role-voter-btn" class="role-card">
-            <h3>👮 Voter Login</h3>
+            <h3> Voter Login</h3>
             <p>Login with Voter ID</p>
         </div>
 
         <div id="role-admin-btn" class="role-card">
-            <h3>👨‍💻 Admin Login</h3>
+            <h3>Admin Login</h3>
             <p>View Results & Data</p>
         </div>
     </div>
 </div>
 
-<!-- ================= ADMIN LOGIN ================= -->
+
 <div id="admin-login-screen" class="app-container hidden">
     <div class="card">
         <h2>Admin Access</h2>
@@ -53,11 +53,11 @@
             </a>
         </div>
 
-        <img src="fingerprint-scan.jpg" alt="Fingerprint Scan" class="login-footer-image">
+      
     </div>
 </div>
 
-<!-- ================= VOTER LAYOUT ================= -->
+
 <div id="voter-layout" class="app-container hidden">
     <div class="layout">
 
@@ -77,7 +77,7 @@
             </div>
         </div>
 
-        <!-- ===== MAIN PANEL ===== -->
+        
         <div class="main-panel">
             <div class="card">
 
@@ -88,7 +88,7 @@
                     <div id="v-step-confirm" class="step">3. Done</div>
                 </div>
 
-                <!-- ===== LOGIN SCREEN ===== -->
+             
                <div id="v-auth-screen" class="inner-card">
     <div style="text-align:center; margin-bottom:20px;">
         <h2>Voter Identification</h2>
@@ -116,7 +116,7 @@
     <button id="fingerprint-login-btn"
         class="secondary-btn"
         style="width:100%; margin-top:10px;">
-    Scan Fingerprint (Demo)
+    Scan Fingerprint
 </button>
 
     <img src="{{ url_for('static', filename='fingerprint-scan.jpg') }}" alt="Fingerprint Scan" class="login-footer-image">
@@ -158,7 +158,7 @@
     </div>
 </div>
 
-<!-- ================= ADMIN DASHBOARD ================= -->
+
 <div id="admin-layout" class="app-container hidden">
 
     <div class="app-header admin-header">
@@ -175,15 +175,18 @@
 
 <button onclick="setBooth()">Set Booth</button>
 
-    <!-- ADMIN ACTION BUTTONS -->
+   
     <div class="admin-actions">
-        <button class="admin-action-btn">Manage Voters</button>
+        
         <button class="admin-action-btn">Manage Candidates</button>
         <button class="admin-action-btn">Manage Election</button>
         <button class="admin-action-btn primary-action">Generate Results</button>
     </div>
-
-    <!-- MANAGE CANDIDATES PANEL (DEMO ONLY) -->
+    
+    <button onclick="downloadReport()" class="primary-btn" style="margin-top:15px;">
+    Download Report
+</button>
+   
 <div id="manage-candidates-panel" class="card hidden">
 
     <h3>Manage Candidates (Demo)</h3>
@@ -191,7 +194,6 @@
         This is a demonstration interface. Changes here do not affect live voting.
     </p>
 
-    <!-- ADD CANDIDATE -->
     <div class="auth-inputs">
         <input type="text" id="demo-cand-name" placeholder="Candidate Name">
         <input type="text" id="demo-cand-party" placeholder="Party">
@@ -200,7 +202,7 @@
         </button>
     </div>
 
-    <!-- CANDIDATE LIST -->
+ 
     <table class="results-table" style="margin-top:20px;">
         <thead>
             <tr>
@@ -213,41 +215,12 @@
     </table>
 
 </div>
-<!-- MANAGE VOTERS PANEL (DEMO ONLY) -->
-<div id="manage-voters-panel" class="card hidden">
 
-    <h3>Manage Voters (Demo)</h3>
-    <p style="opacity:0.7; margin-bottom:15px;">
-        Demonstration only. Changes here do not affect live voting.
-    </p>
 
-    <!-- ADD VOTER -->
-    <div class="auth-inputs">
-        <input type="text" id="demo-voter-name" placeholder="Voter Name">
-        <input type="text" id="demo-voter-id" placeholder="Voter ID">
-        <button id="add-demo-voter" class="primary-btn" style="margin-top:10px;">
-            Add Voter
-        </button>
-    </div>
-
-    <!-- VOTER LIST -->
-    <table class="results-table" style="margin-top:20px;">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Voter ID</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="demo-voter-body"></tbody>
-    </table>
-
-</div>
-
-    <!-- LIVE RESULTS PANEL -->
     <div class="card" id="admin-results-panel">
         <h3>Live Election Results</h3>
         <p id="winner-text" class="winner-text">Loading...</p>
+        <canvas id="voteChart" style="margin-top:20px;"></canvas>
 
         <table class="results-table" style="width:100%; margin-top:15px;">
             <thead>
@@ -258,12 +231,25 @@
                 </tr>
             </thead>
             <tbody id="results-body"></tbody>
+            <div id="analysis-box" style="margin-top:20px;"></div>
         </table>
+<h3 style="margin-top:30px;">Admin Activity Logs</h3>
+
+<table class="results-table" style="width:100%; margin-top:10px;">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Login Time</th>
+            <th>Logout Time</th>
+        </tr>
+    </thead>
+    <tbody id="admin-logs-body"></tbody>
+</table>
     </div>
 
 </div>
 
-<!-- MANAGE ELECTION PANEL (DEMO ONLY) -->
+
 <div id="manage-election-panel" class="card hidden">
 
     <h3>Manage Election (Demo)</h3>
@@ -294,7 +280,7 @@
     </p>
 
 </div>
-<!-- FORGOT PASSWORD MODAL (UI ONLY) -->
+
 <div id="forgot-password-modal" class="hidden"
      style="
         position:fixed;
@@ -320,6 +306,7 @@
     </div>
 </div>
 
+
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 
 <script>
@@ -330,5 +317,7 @@ if (voter) {
     document.querySelector("input").value = voter;
 }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
